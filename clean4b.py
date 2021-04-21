@@ -226,8 +226,6 @@ plt.show()
 plt.figure()
 plt.xscale('linear')
 plt.yscale('linear')
-# plt.xlim(0,2)
-# plt.ylim(1e-5,1e2)
 plt.xlabel(param1_label)
 plt.ylabel(r'Posterior')
 

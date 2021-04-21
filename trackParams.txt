@@ -13,3 +13,18 @@ theoRelUncert = np.array([0.05, 0.05])
 
 =======================================================================
 
+listedVerySmall.npy
+accessFileName = "listedVerySmall"
+dataFileName = "listDataVerySmall"
+paramLabels = np.array(["Reduced thickness", "Nucleon-Width"])
+totDesPts = 12
+nTrentoRuns = 4000  # Number of times to run Trento
+paramMins = np.array([0, 0.5])
+paramMaxs = np.array([0.5, 1.2])
+paramTruths = np.array([0.314, 0.618])
+obsLabels = np.array([r"$\epsilon$2", r"$\epsilon$3"])
+expRelUncert = np.array([0.05, 0.05])
+theoRelUncert = np.array([0.05, 0.05])
+
+=======================================================================
+
