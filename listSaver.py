@@ -14,12 +14,6 @@ def trentoRun(params):
     return np.array([aveg, aveg2])
 
 
-def chm(params):
-    aveg = params[0]
-    aveg2 = params[1]
-    return np.array([aveg, aveg2])
-
-
 def get_quasirandom_sequence(dim, num_samples):
     def phi(dd):
         x = 2.0000
