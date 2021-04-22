@@ -42,10 +42,10 @@ def get_quasirandom_sequence(dim, num_samples):
 
 
 getData = True
-accessFileName = "listedVerySmall"
-dataFileName = "listDataVerySmall"
+accessFileName = "2p2o100dp4000tr"
+dataFileName = "2p2o100dp4000trData"
 paramLabels = np.array(["Reduced thickness", "Nucleon-Width"])
-totDesPts = 12
+totDesPts = 100
 nTrentoRuns = 4000  # Number of times to run Trento
 paramMins = np.array([0, 0.5])
 paramMaxs = np.array([0.5, 1.2])
@@ -77,5 +77,5 @@ if getData:
     store2 = np.array([design_points, observables], dtype=object)
     np.save(dataFileName, store2)
     print("Saved design points and observables")
-    plt.plot(design_points[:, 0], design_points[:, 1], 'b.')
-    plt.show()
+#    plt.plot(design_points[:, 0], design_points[:, 1], 'b.')
+#    plt.show()
