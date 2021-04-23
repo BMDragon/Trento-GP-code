@@ -42,10 +42,10 @@ def get_quasirandom_sequence(dim, num_samples):
 
 
 getData = True
-accessFileName = "2p2o100dp4000tr"
-dataFileName = "2p2o100dp4000trData"
+accessFileName = "2p3o20dp4000tr"
+dataFileName = "2p3o20dp4000trData"
 paramLabels = np.array(["Reduced thickness", "Nucleon-Width"])
-totDesPts = 100
+totDesPts = 20
 nTrentoRuns = 4000  # Number of times to run Trento
 paramMins = np.array([0, 0.5])
 paramMaxs = np.array([0.5, 1.2])
