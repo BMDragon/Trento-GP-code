@@ -16,7 +16,7 @@ warnings.filterwarnings('ignore')
 #          [parameter max values], [parameter truths], [observable names], [observable truths],
 #          [experimental relative uncertainty], [theoretical relative uncertainty]
 # savedValues = np.load("listedVerySmall.npy", allow_pickle=True)
-savedValues = np.load("listedTrento.npy", allow_pickle=True)
+savedValues = np.load("2p2o50dp4000tr.npy", allow_pickle=True)
 totDesPoints = savedValues[1]
 paramNames = savedValues[2]
 paramMins = savedValues[3]
@@ -26,6 +26,7 @@ obsNames = savedValues[6]
 obsTruths = savedValues[7]
 expRelUncert = savedValues[8]
 theoRelUncert = savedValues[9]
+nTrento = 1000
 
 # datum: np.array([[design_points], [observables]])
 datum = np.load(str(savedValues[0]) + ".npy", allow_pickle=True)
@@ -151,29 +152,21 @@ def prior():
 def likelihood(params):
     res = 0.0
     norm = 1.
-
     # Sum over observables
     for xx in range(len(obsTruths)):
         # Function that returns the value of an observable
-
         data_mean2 = obsTruths[xx]
         data_uncert2 = data_mean2 * expRelUncert[xx]
-
         tmp_data_mean, tmp_data_uncert = data_mean2, data_uncert2
 
         emulator = emul_d[obsNames[xx]]['gpr']
-
         tmp_model_mean, tmp_model_uncert = emulator.predict(np.atleast_2d(np.transpose(params)), return_std=True)
 
         cov = (tmp_model_uncert * tmp_model_uncert + tmp_data_uncert * tmp_data_uncert)
-
         res += np.power(tmp_model_mean - tmp_data_mean, 2) / cov
-
         norm *= 1 / np.sqrt(cov.astype('float'))
-
     res *= -0.5
     e = 2.71828182845904523536
-
     return norm * e ** res
 
 
@@ -194,6 +187,7 @@ plt.xscale('linear')
 plt.yscale('linear')
 plt.xlabel(param1_label)
 plt.ylabel(param2_label)
+plt.title("Number of design points: " + str(totDesPoints) + ", Number of trento runs: " + str(nTrento))
 
 # Compute the posterior for a range of values of the parameter "x"
 div = totDesPoints
@@ -228,6 +222,7 @@ plt.xscale('linear')
 plt.yscale('linear')
 plt.xlabel(param1_label)
 plt.ylabel(r'Posterior')
+plt.title("Number of design points: " + str(totDesPoints) + ", Number of trento runs: " + str(nTrento))
 
 # The marginal posterior for a parameter is obtained by integrating over a subset of other model parameters
 
@@ -250,6 +245,7 @@ plt.xscale('linear')
 plt.yscale('linear')
 plt.xlabel(param2_label)
 plt.ylabel(r'Posterior')
+plt.title("Number of design points: " + str(totDesPoints) + ", Number of trento runs: " + str(nTrento))
 
 # The marginal posterior for a parameter is obtained by integrating over a subset of other model parameters
 
