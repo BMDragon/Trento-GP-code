@@ -14,9 +14,10 @@ warnings.filterwarnings('ignore')
 
 # Storage: data file name, Total amount of Design Points, [parameter names], [parameter min values],
 #          [parameter max values], [parameter truths], [observable names], [observable truths],
-#          [experimental relative uncertainty], [theoretical relative uncertainty]
+#          [experimental relative uncertainty], [theoretical relative uncertainty],
+#          number of trento runs per design point
 # savedValues = np.load("listedVerySmall.npy", allow_pickle=True)
-savedValues = np.load("2p2o50dp4000tr.npy", allow_pickle=True)
+savedValues = np.load("./48000/1000dp48tr.npy", allow_pickle=True)
 totDesPoints = savedValues[1]
 paramNames = savedValues[2]
 paramMins = savedValues[3]
@@ -26,7 +27,7 @@ obsNames = savedValues[6]
 obsTruths = savedValues[7]
 expRelUncert = savedValues[8]
 theoRelUncert = savedValues[9]
-nTrento = 4000
+nTrento = savedValues[10]
 
 # datum: np.array([[design_points], [observables]])
 datum = np.load(str(savedValues[0]) + ".npy", allow_pickle=True)

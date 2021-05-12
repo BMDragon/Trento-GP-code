@@ -41,41 +41,47 @@ def get_quasirandom_sequence(dim, num_samples):
     return z
 
 
-getData = True
-accessFileName = "2p2o50dp100tr"
-dataFileName = "2p2o50dp100trData"
-paramLabels = np.array(["Reduced thickness", "Nucleon-Width"])
-totDesPts = 50
-nTrentoRuns = 100  # Number of times to run Trento
-paramMins = np.array([0, 0.5])
-paramMaxs = np.array([0.5, 1.2])
-paramTruths = np.array([0.314, 0.618])
-obsLabels = np.array([r"$\epsilon$2", r"$\epsilon$3"])
-expRelUncert = np.array([0.05, 0.05])
-theoRelUncert = np.array([0.05, 0.05])
+dpList = np.array([10, 20, 30, 40, 50, 60, 64, 75, 80, 96, 100, 120, 125, 128, 150, 160, 192, 200, 240,
+                   250, 300, 320, 375, 384, 400, 480, 500, 600, 800, 1000])
+trList = np.array([4800, 2400, 1600, 1200, 960, 800, 750, 640, 600, 500, 480, 400, 384, 375, 320, 300,
+                   250, 240, 200, 192, 160, 150, 128, 125, 120, 100, 96, 80, 60, 48])
+for aa in range(len(dpList)):
+    getData = True
+    totDesPts = dpList[aa]
+    nTrentoRuns = trList[aa]  # Number of times to run Trento
+    accessFileName = "./48000/" + str(totDesPts) + "dp" + str(nTrentoRuns) + "tr"
+    dataFileName = "./48000/" + str(totDesPts) + "dp" + str(nTrentoRuns) + "trData"
+    paramLabels = np.array(["Reduced thickness", "Nucleon-Width"])
+    paramMins = np.array([0, 0.5])
+    paramMaxs = np.array([0.5, 1.2])
+    paramTruths = np.array([0.314, 0.618])
+    obsLabels = np.array([r"$\epsilon$2", r"$\epsilon$3"])
+    expRelUncert = np.array([0.05, 0.05])
+    theoRelUncert = np.array([0.05, 0.05])
 
-obsTruths = trentoRun(paramTruths)
-print(paramTruths[0], paramTruths[1], obsTruths[0], obsTruths[1])
+    obsTruths = trentoRun(paramTruths)
+    print(paramTruths[0], paramTruths[1], obsTruths[0], obsTruths[1])
 
-# Storage: data file name, amount of Design Points, [parameter names], [parameter min values],
-#          [parameter max values], [parameter truths], [observable names], [observable truths],
-#          [experimental relative uncertainty], [theoretical relative uncertainty]
-store1 = np.array([dataFileName, totDesPts, paramLabels, paramMins, paramMaxs, paramTruths,
-                   obsLabels, obsTruths, expRelUncert, theoRelUncert], dtype=object)
+    # Storage: data file name, amount of Design Points, [parameter names], [parameter min values],
+    #          [parameter max values], [parameter truths], [observable names], [observable truths],
+    #          [experimental relative uncertainty], [theoretical relative uncertainty],
+    #          number of trento runs per design point
+    store1 = np.array([dataFileName, totDesPts, paramLabels, paramMins, paramMaxs, paramTruths,
+                       obsLabels, obsTruths, expRelUncert, theoRelUncert, nTrentoRuns], dtype=object)
 
-np.save(accessFileName, store1)
-print("Saved parameters file")
+    np.save(accessFileName, store1)
+    print("Saved parameters file, dp: " + str(totDesPts) + ", tr: " + str(nTrentoRuns))
 
-if getData:
-    unit_random_sequence = get_quasirandom_sequence(len(paramLabels), totDesPts)
-    design_points = np.zeros(np.shape(unit_random_sequence))
-    observables = np.zeros((len(design_points), len(obsTruths)))
-    for ii in range(len(design_points)):
-        for jj in range(len(paramLabels)):
-            design_points[ii][jj] = paramMins[jj] + unit_random_sequence[ii][jj] * (paramMaxs[jj] - paramMins[jj])
-        observables[ii] = trentoRun(design_points[ii])
-    store2 = np.array([design_points, observables], dtype=object)
-    np.save(dataFileName, store2)
-    print("Saved design points and observables")
-#    plt.plot(design_points[:, 0], design_points[:, 1], 'b.')
-#    plt.show()
+    if getData:
+        unit_random_sequence = get_quasirandom_sequence(len(paramLabels), totDesPts)
+        design_points = np.zeros(np.shape(unit_random_sequence))
+        observables = np.zeros((len(design_points), len(obsTruths)))
+        for ii in range(len(design_points)):
+            for jj in range(len(paramLabels)):
+                design_points[ii][jj] = paramMins[jj] + unit_random_sequence[ii][jj] * (paramMaxs[jj] - paramMins[jj])
+            observables[ii] = trentoRun(design_points[ii])
+        store2 = np.array([design_points, observables], dtype=object)
+        np.save(dataFileName, store2)
+        print("Saved design points and observables, dp: " + str(totDesPts) + ", tr: " + str(nTrentoRuns))
+    #    plt.plot(design_points[:, 0], design_points[:, 1], 'b.')
+    #    plt.show()
