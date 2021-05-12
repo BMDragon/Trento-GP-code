@@ -26,7 +26,7 @@ obsNames = savedValues[6]
 obsTruths = savedValues[7]
 expRelUncert = savedValues[8]
 theoRelUncert = savedValues[9]
-nTrento = 1000
+nTrento = 4000
 
 # datum: np.array([[design_points], [observables]])
 datum = np.load(str(savedValues[0]) + ".npy", allow_pickle=True)
@@ -215,49 +215,30 @@ plt.show()
 ###############################
 # Plotting marginal posterior #
 ###############################
+for i in range(len(paramNames)):
+    plt.figure()
+    plt.xscale('linear')
+    plt.yscale('linear')
+    plt.xlabel(paramNames[i])
+    plt.ylabel(r'Posterior')
+    plt.title("Number of design points: " + str(totDesPoints) + ", Number of trento runs: " + str(nTrento))
 
-# Posterior vs param_1
-plt.figure()
-plt.xscale('linear')
-plt.yscale('linear')
-plt.xlabel(param1_label)
-plt.ylabel(r'Posterior')
-plt.title("Number of design points: " + str(totDesPoints) + ", Number of trento runs: " + str(nTrento))
+    # The marginal posterior for a parameter is obtained by integrating over a subset of other model parameters
 
-# The marginal posterior for a parameter is obtained by integrating over a subset of other model parameters
+    # Compute the posterior for a range of values of the parameter "param_1"
+    param_range = np.linspace(paramMins[i], paramMaxs[i], div)
+    posterior_list = np.array([])
 
-# Compute the posterior for a range of values of the parameter "param_1"
-param1_range = np.linspace(paramMins[0], paramMaxs[0], div)
+    if i == 0:
+        posterior_list = np.array([scipy.integrate.quad(lambda param2_val: posterior((param1_val, param2_val)),
+                                                        paramMins[1], paramMaxs[1])[0] for param1_val in param_range])
+    elif i == 1:
+        posterior_list = np.array([scipy.integrate.quad(lambda param1_val: posterior((param1_val, param2_val)),
+                                                        paramMins[0], paramMaxs[0])[0] for param2_val in param_range])
 
-posterior_list = np.array([scipy.integrate.quad(lambda param2_val: posterior((param1_val, param2_val)),
-                                                paramMins[1], paramMaxs[1])[0] for param1_val in param1_range])
+    plt.plot(param_range, posterior_list, "-", color='black', lw=4)
+    plt.axvline(x=paramTruths[i], color='red')
+    plt.tight_layout()
 
-plt.plot(param1_range, posterior_list, "-", color='black', lw=4)
-
-plt.axvline(x=param1_truth, color='red')
-
-plt.tight_layout()
-plt.show()
-
-# Posterior vs param_2
-plt.figure()
-plt.xscale('linear')
-plt.yscale('linear')
-plt.xlabel(param2_label)
-plt.ylabel(r'Posterior')
-plt.title("Number of design points: " + str(totDesPoints) + ", Number of trento runs: " + str(nTrento))
-
-# The marginal posterior for a parameter is obtained by integrating over a subset of other model parameters
-
-# Compute the posterior for a range of values of the parameter "param_2"
-param1_range = np.linspace(paramMins[1], paramMaxs[1], div)
-
-posterior_list = np.array([scipy.integrate.quad(lambda param1_val: posterior((param1_val, param2_val)),
-                                                paramMins[0], paramMaxs[0])[0] for param2_val in param2_range])
-
-plt.plot(param2_range, posterior_list, "-", color='black', lw=4)
-
-plt.axvline(x=param2_truth, color='red')
-
-plt.tight_layout()
+    print(str(paramTruths[i]) + ": " + str(param_range[np.argmax(posterior_list)]))
 plt.show()
