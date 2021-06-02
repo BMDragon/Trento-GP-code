@@ -233,7 +233,7 @@ def do_something(bb):
     cs = plt.contourf(param1_mesh, param2_mesh, posterior_array, levels=20)
     cbar = plt.colorbar(cs, label="Posterior")
     plt.plot([param1_truth], [param2_truth], "D", color='red', ms=10)
-    plt.figtext(.5, 0.01, subtitle, ha='center')
+    # plt.figtext(.5, 0.01, subtitle, ha='center')
     plt.tight_layout()
     plt.close()
 
