@@ -13,9 +13,8 @@ import warnings
 
 warnings.filterwarnings('ignore')
 
-pairList = np.array([(8, 65536), (16, 32768), (32, 16384), (64, 8192), (128, 4096), (256, 2048), (512, 1024),
-                     (1024, 512), (2048, 256)])
-# pairList = np.array([(10, 1000)])
+pairList = np.array([(8, 8192), (16, 4096), (32, 2048), (64, 1024), (128, 512), (256, 256), (512, 128),
+                     (1024, 64), (2048, 32), (4096, 16), (8192, 8)])
 
 
 def do_something(bb):
@@ -24,7 +23,7 @@ def do_something(bb):
     #          [experimental relative uncertainty], [theoretical relative uncertainty],
     #          number of trento runs per design point
     # savedValues = np.load("listedVerySmall.npy", allow_pickle=True)
-    savedValues = np.load("./2to19/" + str(pairList[bb][0]) + "dp" + str(pairList[bb][1]) + "tr.npy", allow_pickle=True)
+    savedValues = np.load("./2to16/" + str(pairList[bb][0]) + "dp" + str(pairList[bb][1]) + "tr.npy", allow_pickle=True)
     totDesPoints = savedValues[1]
     paramNames = savedValues[2]
     paramMins = savedValues[3]
@@ -92,12 +91,12 @@ def do_something(bb):
             n_restarts_optimizer=nrestarts,
             copy_X_train=True
         ).fit(emulator_design_pts_value, emulator_obs_mean_value)
-
+        """
         # https://github.com/keweiyao/JETSCAPE2020-TRENTO-BAYES/blob/master/trento-bayes.ipynb
         print('Information on emulator for observable ' + obs_label)
         print('RBF: ', gaussian_process.kernel_.get_params()['k1'])
         print('White: ', gaussian_process.kernel_.get_params()['k2'])
-
+        """
         emul_d[obsNames[nn]] = {
             'gpr': gaussian_process
             # 'mean':scipy.interpolate.interp2d(calc_d[obs_name]['x_list'], calc_d[obs_name]['y_list'], np.transpose(
@@ -214,21 +213,88 @@ def do_something(bb):
     print(str(pairList[bb]) + "Posterior at parameter truth: " + str(paramTruthPost))
     print(str(pairList[bb]) + "Max Posterior: " + str(maxPost))
     ratio = paramTruthPost/maxPost
+    print(str(pairList[bb]) + "Ratio: " + str(ratio))
 
     def trapezoid(myArr, dx):
         add = np.sum(myArr) - 0.5 * myArr[0] - 0.5 * myArr[-1]
         return add * dx
 
-    temp = np.zeros((len(posterior_array)))
-    for zz in range(len(posterior_array)):
-        temp[zz] = trapezoid(posterior_array[zz], param2_mesh[0][1] - param2_mesh[0][0])
+    def doubleTrap(myArr, dx, dy):
+        temp = np.zeros((len(myArr)))
+        for row in range(len(myArr)):
+            temp[row] = trapezoid(myArr[row], dy)
+        return trapezoid(temp, dx)
 
-    vol = trapezoid(temp, param1_mesh[1][0] - param1_mesh[0][0])
-    norm = paramTruthPost/vol
+    ddxx = param1_mesh[1][0] - param1_mesh[0][0]
+    ddyy = param2_mesh[0][1] - param2_mesh[0][0]
+    vol1 = doubleTrap(posterior_array, ddxx, ddyy)
     hellDistance = np.sqrt(1 - np.sqrt(paramTruthPost / np.sum(posterior_array)))
     print(str(pairList[bb]) + "Hellinger Distance: " + str(hellDistance))
+    """
+    def postFunc(y, x):
+        return float(posterior((x, y)))
 
-    print(str(pairList[bb]) + ", normP(truth): " + str(norm))
+    vol2 = scipy.integrate.dblquad(postFunc, paramMins[0], paramMaxs[0], paramMins[1], paramMaxs[1])[0]
+
+    def muTop1(y, x):
+        return x * float(posterior((x, y)))
+
+    def muTop2(y, x):
+        return y * float(posterior((x, y)))
+
+    def mu(num):
+        top = 0
+        if num == 1:
+            top = scipy.integrate.dblquad(muTop1, paramMins[0], paramMaxs[0], paramMins[1], paramMaxs[1])[0]
+        elif num == 2:
+            top = scipy.integrate.dblquad(muTop2, paramMins[0], paramMaxs[0], paramMins[1], paramMaxs[1])[0]
+        bottom = vol2
+        return top/bottom
+
+    mu1 = mu(1)
+    mu2 = mu(2)
+    norm = paramTruthPost/vol2
+    print(str(pairList[bb]) + "normP(truth): " + str(norm))
+
+    def closureTop(y, x):
+        return ((x - paramTruths[0])**2) * ((y - paramTruths[1])**2) * float(posterior((x, y)))
+
+    def closureBottom(y, x):
+        return ((x - mu1)**2) * ((y - mu2)**2) * float(posterior((x, y)))
+
+    def closure():
+        top = scipy.integrate.dblquad(closureTop, paramMins[0], paramMaxs[0], paramMins[1], paramMaxs[1])[0]
+        bottom = scipy.integrate.dblquad(closureBottom, paramMins[0], paramMaxs[0], paramMins[1], paramMaxs[1])[0]
+        return top/bottom
+
+    close = closure()
+    print(str(pairList[bb]) + "JF Closure: " + str(close))
+    """
+
+    normish = paramTruthPost / vol1
+    print(str(pairList[bb]) + "normP(truth): " + str(normish))
+
+    x1Post = np.multiply(param1_mesh, posterior_array)
+    x2Post = np.multiply(param2_mesh, posterior_array)
+    mu1 = doubleTrap(x1Post, ddxx, ddyy) / vol1
+    mu2 = doubleTrap(x2Post, ddxx, ddyy) / vol1
+
+    topIn1 = np.subtract(param1_mesh, paramTruths[0])
+    topIn2 = np.subtract(param2_mesh, paramTruths[1])
+    topInside1 = np.multiply(topIn1, topIn1)
+    topInside2 = np.multiply(topIn2, topIn2)
+    topInWhole = np.multiply(np.multiply(topInside1, topInside2), posterior_array)
+    top = doubleTrap(topInWhole, ddxx, ddyy)
+
+    bottomIn1 = np.subtract(param1_mesh, mu1)
+    bottomIn2 = np.subtract(param2_mesh, mu2)
+    bottomInside1 = np.multiply(bottomIn1, bottomIn1)
+    bottomInside2 = np.multiply(bottomIn2, bottomIn2)
+    bottomInWhole = np.multiply(np.multiply(bottomInside1, bottomInside2), posterior_array)
+    bottom = doubleTrap(bottomInWhole, ddxx, ddyy)
+
+    pacquet = top/bottom
+    print(str(pairList[bb]) + "JF Closure: " + str(pacquet))
 
     # Plot the posterior
     cs = plt.contourf(param1_mesh, param2_mesh, posterior_array, levels=20)
@@ -236,7 +302,7 @@ def do_something(bb):
     plt.plot([param1_truth], [param2_truth], "D", color='red', ms=10)
     # plt.figtext(.5, 0.01, subtitle, ha='center')
     plt.tight_layout()
-    plt.close()
+    plt.show()
 
     """
     ###############################
