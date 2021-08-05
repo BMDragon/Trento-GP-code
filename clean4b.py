@@ -3,6 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import multiprocessing as mp
 import scipy.integrate
+import scipy.optimize as opt
+import sys
 
 # Use Gaussian process from scikit-learn
 from sklearn.gaussian_process import GaussianProcessRegressor as GPR
@@ -13,16 +15,17 @@ import warnings
 
 warnings.filterwarnings('ignore')
 
-pairList = np.array([(8, 8192), (16, 4096), (32, 2048), (64, 1024), (128, 512), (256, 256), (512, 128),
-                     (1024, 64), (2048, 32), (4096, 16), (8192, 8)])
+pairList = np.array([(8, 8192), (16, 4096), (32, 2048), (64, 1024), (128, 512), (256, 256),
+                     (512, 128), (1024, 64), (2048, 32)])
+numRun = sys.argv[1]
+finalVals = np.zeros((len(pairList), 4))
+valSaveName = "./FinalVals/Trial" + str(numRun)
 
 
 def do_something(bb):
-    # Storage: data file name, Total amount of Design Points, [parameter names], [parameter min values],
+    # Storage: [data file names], amount of Design Points, [parameter names], [parameter min values],
     #          [parameter max values], [parameter truths], [observable names], [observable truths],
-    #          [experimental relative uncertainty], [theoretical relative uncertainty],
     #          number of trento runs per design point
-    # savedValues = np.load("listedVerySmall.npy", allow_pickle=True)
     savedValues = np.load("./2to16/" + str(pairList[bb][0]) + "dp" + str(pairList[bb][1]) + "tr.npy", allow_pickle=True)
     totDesPoints = savedValues[1]
     paramNames = savedValues[2]
@@ -32,32 +35,19 @@ def do_something(bb):
     obsNames = savedValues[6]
     obsTruths = savedValues[7][0]
     truthUncert = savedValues[7][1]
-    expRelUncert = savedValues[8]
-    theoRelUncert = savedValues[9]
-    nTrento = savedValues[10]
+    nTrento = savedValues[8]
 
     #   datum: np.array([[design_points], [observables]])
-    datum = np.load(str(savedValues[0]) + ".npy", allow_pickle=True)
-    desPts = datum[0]
-    observables = datum[1]
-
-    #    desPts = np.load(str(savedValues[0][0]) + ".npy", allow_pickle=True)
-    #    observables = np.load(str(savedValues[0][1]) + ".npy", allow_pickle=True)
-
-    ### Add uncertainty to the observables ###
-    calcUncertList = np.multiply(observables, theoRelUncert)
-    noise = np.zeros(np.shape(calcUncertList))
-    for ii in range(len(calcUncertList)):
-        for jj in range(len(obsTruths)):
-            noise[ii][jj] = np.random.normal(0, calcUncertList[ii][jj])
-    calcMeanPlusNoise = np.add(observables, noise)
+    desPts = np.load(str(savedValues[0][0]) + ".npy", allow_pickle=True)
+    observables = np.load(str(savedValues[0][1]) + ".npy", allow_pickle=True)
 
     ### Make emulator for each observable ###
     emul_d = {}
 
     for nn in range(len(obsTruths)):
+        """
         # Label for the observable
-        obs_label = obsNames[nn]
+        obs_label = obsNames[nn]"""
 
         # Function that returns the value of an observable (just to get the truth)
 
@@ -97,6 +87,7 @@ def do_something(bb):
         print('RBF: ', gaussian_process.kernel_.get_params()['k1'])
         print('White: ', gaussian_process.kernel_.get_params()['k2'])
         """
+
         emul_d[obsNames[nn]] = {
             'gpr': gaussian_process
             # 'mean':scipy.interpolate.interp2d(calc_d[obs_name]['x_list'], calc_d[obs_name]['y_list'], np.transpose(
@@ -109,7 +100,7 @@ def do_something(bb):
         # Plot the emulator #
         #####################
 
-        # observable vs value of one parameter (with the other parameter fixed)
+        """# observable vs value of one parameter (with the other parameter fixed)
         for pl in range(len(paramTruths)):
             plt.figure(1)
             plt.xscale('linear')
@@ -132,7 +123,7 @@ def do_something(bb):
 
             # Plot design points
             plt.errorbar(desPts[:, pl], np.array(observables[:, nn]),
-                         yerr=np.array(calcUncertList)[:, nn], fmt='D', color='orange', capsize=4)
+                         yerr=np.array(truthUncert)[:, nn], fmt='D', color='orange', capsize=4)
 
             # Plot interpolator
             plt.plot(ranges[pl + 1], z_list, color='blue')
@@ -141,8 +132,9 @@ def do_something(bb):
             # Plot the truth
             plt.plot(paramTruths[pl], obsTruths[nn], "D", color='black')
             plt.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
-            plt.tight_layout()
+            plt.tight_layout()"""
     plt.close(1)
+    print(str(pairList[bb]) + " emulators trained")
 
     ### Compute the Posterior ###
     # We assume uniform priors for this example
@@ -177,10 +169,10 @@ def do_something(bb):
         e = 2.71828182845904523536
         return norm * e ** res
 
-    def posterior(params):
-        return prior() * likelihood(params)
+    def posterior(*params):
+        return prior() * likelihood(np.array([*params]))
 
-    ### Plot the Posterior ###
+    """ ### Plot the Posterior ###
     # Info about parameters
     param1_label = paramNames[0]
     param1_truth = paramTruths[0]
@@ -188,153 +180,99 @@ def do_something(bb):
     param2_label = paramNames[1]
     param2_truth = paramTruths[1]
 
-    plt.figure()
+    plt.figure(2)
     plt.xscale('linear')
     plt.yscale('linear')
     plt.xlabel(param1_label)
     plt.ylabel(param2_label)
-    plt.title("Number of design points: " + str(totDesPoints) + ", Number of trento runs: " + str(nTrento))
+    plt.title("Number of design points: " + str(totDesPoints) + ", Number of trento runs: " + str(nTrento))"""
 
     # Compute the posterior for a range of values of the parameter "x"
     div = totDesPoints
     if totDesPoints < 50:
         div = 50
 
-    param1_range = np.arange(paramMins[0], paramMaxs[0], (paramMaxs[0] - paramMins[0]) / div)
-    param2_range = np.arange(paramMins[1], paramMaxs[1], (paramMaxs[1] - paramMins[1]) / div)
+    param_ranges = np.zeros((len(paramMins), div))
+    for qq in range(len(paramMins)):
+        param_ranges[qq] = np.arange(paramMins[qq], paramMaxs[qq], (paramMaxs[qq] - paramMins[qq])/div)
 
-    param1_mesh, param2_mesh = np.meshgrid(param1_range, param2_range, sparse=False, indexing='ij')
-
-    posterior_array = np.array([posterior((param1_val, param2_val)) for (param1_val, param2_val) in
-                                zip(param1_mesh, param2_mesh)])
-
-    paramTruthPost = float(posterior(paramTruths))
+    paramTruthPost = float(posterior(*paramTruths))
+    """posterior_array = np.array([posterior(point) for point in zip(*meshes)])
     maxPost = np.amax(posterior_array)
-    print(str(pairList[bb]) + "Posterior at parameter truth: " + str(paramTruthPost))
-    print(str(pairList[bb]) + "Max Posterior: " + str(maxPost))
-    ratio = paramTruthPost/maxPost
-    print(str(pairList[bb]) + "Ratio: " + str(ratio))
 
     def trapezoid(myArr, dx):
         add = np.sum(myArr) - 0.5 * myArr[0] - 0.5 * myArr[-1]
         return add * dx
 
-    def doubleTrap(myArr, dx, dy):
+    def nTrap(myArr, dx, ndim):
+        if ndim == 1:
+            return trapezoid(myArr, dx[0])
         temp = np.zeros((len(myArr)))
         for row in range(len(myArr)):
-            temp[row] = trapezoid(myArr[row], dy)
-        return trapezoid(temp, dx)
+            temp[row] = nTrap(myArr[row], dx[1:], ndim-1)
+        return trapezoid(temp, dx[0])
 
-    ddxx = param1_mesh[1][0] - param1_mesh[0][0]
-    ddyy = param2_mesh[0][1] - param2_mesh[0][0]
-    vol1 = doubleTrap(posterior_array, ddxx, ddyy)
-    hellDistance = np.sqrt(1 - np.sqrt(paramTruthPost / np.sum(posterior_array)))
-    print(str(pairList[bb]) + "Hellinger Distance: " + str(hellDistance))
-    """
-    def postFunc(y, x):
-        return float(posterior((x, y)))
-
-    vol2 = scipy.integrate.dblquad(postFunc, paramMins[0], paramMaxs[0], paramMins[1], paramMaxs[1])[0]
-
-    def muTop1(y, x):
-        return x * float(posterior((x, y)))
-
-    def muTop2(y, x):
-        return y * float(posterior((x, y)))
-
-    def mu(num):
-        top = 0
-        if num == 1:
-            top = scipy.integrate.dblquad(muTop1, paramMins[0], paramMaxs[0], paramMins[1], paramMaxs[1])[0]
-        elif num == 2:
-            top = scipy.integrate.dblquad(muTop2, paramMins[0], paramMaxs[0], paramMins[1], paramMaxs[1])[0]
-        bottom = vol2
-        return top/bottom
-
-    mu1 = mu(1)
-    mu2 = mu(2)
-    norm = paramTruthPost/vol2
-    print(str(pairList[bb]) + "normP(truth): " + str(norm))
-
-    def closureTop(y, x):
-        return ((x - paramTruths[0])**2) * ((y - paramTruths[1])**2) * float(posterior((x, y)))
-
-    def closureBottom(y, x):
-        return ((x - mu1)**2) * ((y - mu2)**2) * float(posterior((x, y)))
-
-    def closure():
-        top = scipy.integrate.dblquad(closureTop, paramMins[0], paramMaxs[0], paramMins[1], paramMaxs[1])[0]
-        bottom = scipy.integrate.dblquad(closureBottom, paramMins[0], paramMaxs[0], paramMins[1], paramMaxs[1])[0]
-        return top/bottom
-
-    close = closure()
-    print(str(pairList[bb]) + "JF Closure: " + str(close))
-    """
-
+    ddxx = np.array([param_ranges[ro][1] - param_ranges[ro][0] for ro in range(len(paramMins))])
+    vol1 = nTrap(posterior_array, ddxx, len(paramMins))"""
+    ranges = np.zeros((len(paramMins), 2))
+    for dex in range(len(paramMins)):
+        ranges[dex][0] = paramMins[dex]
+        ranges[dex][1] = paramMaxs[dex]
+    vol1 = scipy.integrate.nquad(posterior, [*ranges], opts={'epsrel': 0.01})[0]
     normish = paramTruthPost / vol1
-    print(str(pairList[bb]) + "normP(truth): " + str(normish))
+    print(vol1)
 
-    x1Post = np.multiply(param1_mesh, posterior_array)
-    x2Post = np.multiply(param2_mesh, posterior_array)
-    mu1 = doubleTrap(x1Post, ddxx, ddyy) / vol1
-    mu2 = doubleTrap(x2Post, ddxx, ddyy) / vol1
+    def minPost(*params):
+        return -1*posterior(*params[0])
 
-    topIn1 = np.subtract(param1_mesh, paramTruths[0])
-    topIn2 = np.subtract(param2_mesh, paramTruths[1])
-    topInside1 = np.multiply(topIn1, topIn1)
-    topInside2 = np.multiply(topIn2, topIn2)
-    topInWhole = np.multiply(np.multiply(topInside1, topInside2), posterior_array)
-    top = doubleTrap(topInWhole, ddxx, ddyy)
+    maxPostPar = opt.fmin(minPost, paramTruths)
+    maxPost = float(posterior(*maxPostPar)) / vol1
+    AIC = -2 * np.log(maxPost) + 2*len(paramMins)
 
-    bottomIn1 = np.subtract(param1_mesh, mu1)
-    bottomIn2 = np.subtract(param2_mesh, mu2)
-    bottomInside1 = np.multiply(bottomIn1, bottomIn1)
-    bottomInside2 = np.multiply(bottomIn2, bottomIn2)
-    bottomInWhole = np.multiply(np.multiply(bottomInside1, bottomInside2), posterior_array)
-    bottom = doubleTrap(bottomInWhole, ddxx, ddyy)
+    subtitle = "NormP: " + str(normish) + ", AIC: " + str(AIC)
 
-    pacquet = top/bottom
-    print(str(pairList[bb]) + "JF Closure: " + str(pacquet))
+    print(str(pairList[bb]) + " normP(truth): " + str(normish))
+    print(str(pairList[bb]) + " AIC: " + str(AIC))
+    finalVals[bb][0] = pairList[bb][0]
+    finalVals[bb][1] = pairList[bb][1]
+    finalVals[bb][2] = normish
+    finalVals[bb][3] = AIC
 
-    # Plot the posterior
-    cs = plt.contourf(param1_mesh, param2_mesh, posterior_array, levels=20)
+    """# Plot the posterior
+    cs = plt.contourf(*meshes, posterior_array, levels=20)
     cbar = plt.colorbar(cs, label="Posterior")
     plt.plot([param1_truth], [param2_truth], "D", color='red', ms=10)
-    # plt.figtext(.5, 0.01, subtitle, ha='center')
-    plt.tight_layout()
-    plt.show()
+    plt.figtext(.5, 0.01, subtitle, ha='center')
+    plt.tight_layout()"""
+    plt.close(2)
 
-    """
     ###############################
     # Plotting marginal posterior #
     ###############################
-    for i in range(len(paramNames)):
+    """for i in range(len(paramNames)):
         plt.figure()
         plt.xscale('linear')
         plt.yscale('linear')
         plt.xlabel(paramNames[i])
         plt.ylabel(r'Posterior')
         plt.title("Number of design points: " + str(totDesPoints) + ", Number of trento runs: " + str(nTrento))
+        plt.figtext(.5, 0.01, subtitle, ha='center')
 
         # The marginal posterior for a parameter is obtained by integrating over a subset of other model parameters
 
         # Compute the posterior for a range of values of the parameter "param_1"
-        param_range = np.linspace(paramMins[i], paramMaxs[i], div)
         posterior_list = np.array([])
-
-        if i == 0:
-            posterior_list = np.array([scipy.integrate.quad(lambda param2_val: posterior((param1_val, param2_val)),
-                                                            paramMins[1], paramMaxs[1])[0] for param1_val in param_range])
-        elif i == 1:
-            posterior_list = np.array([scipy.integrate.quad(lambda param1_val: posterior((param1_val, param2_val)),
-                                                            paramMins[0], paramMaxs[0])[0] for param2_val in param_range])
-
-        plt.plot(param_range, posterior_list, "-", color='black', lw=4)
+        param_vals = np.array([*paramTruths])
+        for ee in param_ranges[i]:
+            param_vals[i] = ee
+            posterior_list = np.append(posterior_list, posterior(*param_vals))
+        plt.plot(param_ranges[i], posterior_list, "-", color='black', lw=4)
         plt.axvline(x=paramTruths[i], color='red')
         plt.tight_layout()
-    plt.close()
-    """
+    plt.close()"""
 
 
 pool = mp.Pool()
 pool.map(do_something, range(len(pairList)))
+
+np.save(valSaveName, finalVals)
