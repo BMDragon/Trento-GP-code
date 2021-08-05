@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 import multiprocessing as mp
 import scipy.integrate
 import scipy.optimize as opt
-import sys
 
 # Use Gaussian process from scikit-learn
 from sklearn.gaussian_process import GaussianProcessRegressor as GPR
@@ -15,18 +14,24 @@ import warnings
 
 warnings.filterwarnings('ignore')
 
+
+# Make Changes Here #
 pairList = np.array([(8, 8192), (16, 4096), (32, 2048), (64, 1024), (128, 512), (256, 256),
                      (512, 128), (1024, 64), (2048, 32)])
-numRun = sys.argv[1]
-finalVals = np.zeros((len(pairList), 4))
-valSaveName = "./FinalVals/Trial" + str(numRun)
+folderName = "./2to16/"
+emulatorGraphs = True
+posteriorGraphs = True
+
+# DO NOT MAKE CHANGES BELOW #
+##################################################
 
 
 def do_something(bb):
     # Storage: [data file names], amount of Design Points, [parameter names], [parameter min values],
     #          [parameter max values], [parameter truths], [observable names], [observable truths],
     #          number of trento runs per design point
-    savedValues = np.load("./2to16/" + str(pairList[bb][0]) + "dp" + str(pairList[bb][1]) + "tr.npy", allow_pickle=True)
+    savedValues = np.load("" + folderName + str(pairList[bb][0]) + "dp"
+                          + str(pairList[bb][1]) + "tr.npy", allow_pickle=True)
     totDesPoints = savedValues[1]
     paramNames = savedValues[2]
     paramMins = savedValues[3]
@@ -45,12 +50,6 @@ def do_something(bb):
     emul_d = {}
 
     for nn in range(len(obsTruths)):
-        """
-        # Label for the observable
-        obs_label = obsNames[nn]"""
-
-        # Function that returns the value of an observable (just to get the truth)
-
         # Kernels
         k0 = 1. * kernels.RBF(
             # length_scale=(param1_paramspace_length / 2., param2_paramspace_length / 2.)
@@ -99,41 +98,44 @@ def do_something(bb):
         #####################
         # Plot the emulator #
         #####################
+        if emulatorGraphs:
+            # Label for the observable
+            obs_label = obsNames[nn]
 
-        """# observable vs value of one parameter (with the other parameter fixed)
-        for pl in range(len(paramTruths)):
-            plt.figure(1)
-            plt.xscale('linear')
-            plt.yscale('linear')
-            plt.xlabel(paramNames[pl])
-            plt.ylabel(obs_label)
+            # observable vs value of one parameter (with the other parameter fixed)
+            for pl in range(len(paramTruths)):
+                plt.figure(1)
+                plt.xscale('linear')
+                plt.yscale('linear')
+                plt.xlabel(paramNames[pl])
+                plt.ylabel(obs_label)
 
-            # Compute the posterior for a range of values of the parameter "x"
-            ranges = np.zeros(50).reshape((1, 50))
-            for rr in range(0, len(paramMins)):
-                if rr != pl:
-                    val = (paramMins[rr] + paramMaxs[rr]) / 2
-                    ranges = np.append(ranges, np.linspace(val, val, 50).reshape((1, 50)), axis=0)
-                else:
-                    ranges = np.append(ranges, np.linspace(paramMins[rr], paramMaxs[rr], 50).reshape((1, 50)), axis=0)
+                # Compute the posterior for a range of values of the parameter "x"
+                ranges = np.zeros(50).reshape((1, 50))
+                for rr in range(0, len(paramMins)):
+                    if rr != pl:
+                        val = (paramMins[rr] + paramMaxs[rr]) / 2
+                        ranges = np.append(ranges, np.linspace(val, val, 50).reshape((1, 50)), axis=0)
+                    else:
+                        ranges = np.append(ranges, np.linspace(paramMins[rr], paramMaxs[rr], 50).reshape((1, 50)), axis=0)
 
-            param_value_array = np.transpose(ranges[1:, :])
+                param_value_array = np.transpose(ranges[1:, :])
 
-            z_list, z_list_uncert = gaussian_process.predict(param_value_array, return_std=True)
+                z_list, z_list_uncert = gaussian_process.predict(param_value_array, return_std=True)
 
-            # Plot design points
-            plt.errorbar(desPts[:, pl], np.array(observables[:, nn]),
-                         yerr=np.array(truthUncert)[:, nn], fmt='D', color='orange', capsize=4)
+                # Plot design points
+                plt.errorbar(desPts[:, pl], np.array(observables[:, nn]),
+                             yerr=np.array(truthUncert)[:, nn], fmt='D', color='orange', capsize=4)
 
-            # Plot interpolator
-            plt.plot(ranges[pl + 1], z_list, color='blue')
-            plt.fill_between(ranges[pl + 1], z_list - z_list_uncert, z_list + z_list_uncert, color='blue', alpha=.4)
+                # Plot interpolator
+                plt.plot(ranges[pl + 1], z_list, color='blue')
+                plt.fill_between(ranges[pl + 1], z_list - z_list_uncert, z_list + z_list_uncert, color='blue', alpha=.4)
 
-            # Plot the truth
-            plt.plot(paramTruths[pl], obsTruths[nn], "D", color='black')
-            plt.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
-            plt.tight_layout()"""
-    plt.close(1)
+                # Plot the truth
+                plt.plot(paramTruths[pl], obsTruths[nn], "D", color='black')
+                plt.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
+                plt.tight_layout()
+    plt.show()
     print(str(pairList[bb]) + " emulators trained")
 
     ### Compute the Posterior ###
@@ -172,21 +174,6 @@ def do_something(bb):
     def posterior(*params):
         return prior() * likelihood(np.array([*params]))
 
-    """ ### Plot the Posterior ###
-    # Info about parameters
-    param1_label = paramNames[0]
-    param1_truth = paramTruths[0]
-
-    param2_label = paramNames[1]
-    param2_truth = paramTruths[1]
-
-    plt.figure(2)
-    plt.xscale('linear')
-    plt.yscale('linear')
-    plt.xlabel(param1_label)
-    plt.ylabel(param2_label)
-    plt.title("Number of design points: " + str(totDesPoints) + ", Number of trento runs: " + str(nTrento))"""
-
     # Compute the posterior for a range of values of the parameter "x"
     div = totDesPoints
     if totDesPoints < 50:
@@ -197,23 +184,7 @@ def do_something(bb):
         param_ranges[qq] = np.arange(paramMins[qq], paramMaxs[qq], (paramMaxs[qq] - paramMins[qq])/div)
 
     paramTruthPost = float(posterior(*paramTruths))
-    """posterior_array = np.array([posterior(point) for point in zip(*meshes)])
-    maxPost = np.amax(posterior_array)
 
-    def trapezoid(myArr, dx):
-        add = np.sum(myArr) - 0.5 * myArr[0] - 0.5 * myArr[-1]
-        return add * dx
-
-    def nTrap(myArr, dx, ndim):
-        if ndim == 1:
-            return trapezoid(myArr, dx[0])
-        temp = np.zeros((len(myArr)))
-        for row in range(len(myArr)):
-            temp[row] = nTrap(myArr[row], dx[1:], ndim-1)
-        return trapezoid(temp, dx[0])
-
-    ddxx = np.array([param_ranges[ro][1] - param_ranges[ro][0] for ro in range(len(paramMins))])
-    vol1 = nTrap(posterior_array, ddxx, len(paramMins))"""
     ranges = np.zeros((len(paramMins), 2))
     for dex in range(len(paramMins)):
         ranges[dex][0] = paramMins[dex]
@@ -233,46 +204,33 @@ def do_something(bb):
 
     print(str(pairList[bb]) + " normP(truth): " + str(normish))
     print(str(pairList[bb]) + " AIC: " + str(AIC))
-    finalVals[bb][0] = pairList[bb][0]
-    finalVals[bb][1] = pairList[bb][1]
-    finalVals[bb][2] = normish
-    finalVals[bb][3] = AIC
-
-    """# Plot the posterior
-    cs = plt.contourf(*meshes, posterior_array, levels=20)
-    cbar = plt.colorbar(cs, label="Posterior")
-    plt.plot([param1_truth], [param2_truth], "D", color='red', ms=10)
-    plt.figtext(.5, 0.01, subtitle, ha='center')
-    plt.tight_layout()"""
-    plt.close(2)
 
     ###############################
     # Plotting marginal posterior #
     ###############################
-    """for i in range(len(paramNames)):
-        plt.figure()
-        plt.xscale('linear')
-        plt.yscale('linear')
-        plt.xlabel(paramNames[i])
-        plt.ylabel(r'Posterior')
-        plt.title("Number of design points: " + str(totDesPoints) + ", Number of trento runs: " + str(nTrento))
-        plt.figtext(.5, 0.01, subtitle, ha='center')
+    if posteriorGraphs:
+        for i in range(len(paramNames)):
+            plt.figure()
+            plt.xscale('linear')
+            plt.yscale('linear')
+            plt.xlabel(paramNames[i])
+            plt.ylabel(r'Posterior')
+            plt.title("Number of design points: " + str(totDesPoints) + ", Number of trento runs: " + str(nTrento))
+            plt.figtext(.5, 0.01, subtitle, ha='center')
 
-        # The marginal posterior for a parameter is obtained by integrating over a subset of other model parameters
+            # The marginal posterior for a parameter is obtained by integrating over a subset of other model parameters
 
-        # Compute the posterior for a range of values of the parameter "param_1"
-        posterior_list = np.array([])
-        param_vals = np.array([*paramTruths])
-        for ee in param_ranges[i]:
-            param_vals[i] = ee
-            posterior_list = np.append(posterior_list, posterior(*param_vals))
-        plt.plot(param_ranges[i], posterior_list, "-", color='black', lw=4)
-        plt.axvline(x=paramTruths[i], color='red')
-        plt.tight_layout()
-    plt.close()"""
+            # Compute the posterior for a range of values of the parameter "param_1"
+            posterior_list = np.array([])
+            param_vals = np.array([*paramTruths])
+            for ee in param_ranges[i]:
+                param_vals[i] = ee
+                posterior_list = np.append(posterior_list, posterior(*param_vals))
+            plt.plot(param_ranges[i], posterior_list, "-", color='black', lw=4)
+            plt.axvline(x=paramTruths[i], color='red')
+            plt.tight_layout()
+        plt.show()
 
 
 pool = mp.Pool()
 pool.map(do_something, range(len(pairList)))
-
-np.save(valSaveName, finalVals)

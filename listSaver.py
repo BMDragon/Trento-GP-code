@@ -2,7 +2,20 @@ import numpy as np
 import subprocess
 import multiprocessing as mp
 
+# Make Changes Here #
+folderName = "./2to16/"
+getData = True
+pairList = np.array([(8, 8192), (16, 4096), (32, 2048), (64, 1024), (128, 512), (256, 256),
+                     (512, 128), (1024, 64), (2048, 32)])
+paramLabels = np.array(["Reduced thickness", "Nucleon-Width"])
+paramMins = np.array([0, 0.5])  # [param1_min, param2_min, ..., paramN_min]
+paramMaxs = np.array([0.5, 1.2])  # [param1_max, param2_max, ..., paramN_max]
+obsLabels = np.array([r"$\epsilon$2", r"$\epsilon$3"])
+paramTruths = np.array([0.314, 0.618])
+dataUncert = 65536
 
+
+# Trento options
 def trentoRun(params, nTrent, uncert=False):
     string = '../build/src/trento Pb Pb ' + str(nTrent) + ' -p ' + str(params[0]) + ' -w ' + str(params[1])
     with subprocess.Popen(string.split(), stdout=subprocess.PIPE) as proc:
@@ -16,6 +29,9 @@ def trentoRun(params, nTrent, uncert=False):
         std2 = np.std(data2) / np.sqrt(nTrent)
         return np.array([(aveg, aveg2), (std1, std2)])
     return np.array([(aveg, aveg2)])
+
+# DO NOT MAKE CHANGES BELOW #
+################################################################
 
 
 def get_quasirandom_sequence(dim, num_samples):
@@ -45,24 +61,16 @@ def get_quasirandom_sequence(dim, num_samples):
     return z
 
 
-getData = True
-pairList = np.array([(8, 8192), (16, 4096), (32, 2048), (64, 1024), (128, 512), (256, 256),
-                     (512, 128), (1024, 64), (2048, 32)])
-paramLabels = np.array(["Reduced thickness", "Nucleon-Width"])
-paramMins = np.array([0, 0.5])
-paramMaxs = np.array([0.5, 1.2])
-obsLabels = np.array([r"$\epsilon$2", r"$\epsilon$3"])
-paramTruths = np.array([0.314, 0.618])
-obsTruths = trentoRun(paramTruths, 65536, uncert=True)
+obsTruths = trentoRun(paramTruths, dataUncert, uncert=True)
 print(paramTruths[0], paramTruths[1], obsTruths[0], obsTruths[1])
 
 
 def saving(aa):
     totDesPts = pairList[aa][0]
     nTrentoRuns = pairList[aa][1]  # Number of times to run Trento
-    accessFileName = "./2to16/" + str(totDesPts) + "dp" + str(nTrentoRuns) + "tr"
-    dpFileName = "./2to16/" + str(totDesPts) + "dp" + str(nTrentoRuns) + "trDP"
-    obsFileName = "./2to16/" + str(totDesPts) + "dp" + str(nTrentoRuns) + "trObs"
+    accessFileName = "" + folderName + str(totDesPts) + "dp" + str(nTrentoRuns) + "tr"
+    dpFileName = "" + folderName + str(totDesPts) + "dp" + str(nTrentoRuns) + "trDP"
+    obsFileName = "" + folderName + str(totDesPts) + "dp" + str(nTrentoRuns) + "trObs"
 
     # Storage: [data file names], amount of Design Points, [parameter names], [parameter min values],
     #          [parameter max values], [parameter truths], [observable names], [observable truths],
@@ -86,8 +94,8 @@ def saving(aa):
         np.save(dpFileName, design_points)
         np.save(obsFileName, observables)
         print("Saved design points and observables, dp: " + str(totDesPts) + ", tr: " + str(nTrentoRuns))
-    #    plt.plot(design_points[:, 0], design_points[:, 1], 'b.')
-    #    plt.show()
+    #   plt.plot(design_points[:, 0], design_points[:, 1], 'b.')
+    #   plt.show()
 
 
 pool = mp.Pool()
