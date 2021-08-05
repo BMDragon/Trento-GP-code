@@ -16,9 +16,8 @@ warnings.filterwarnings('ignore')
 
 
 # Make Changes Here #
-pairList = np.array([(8, 8192), (16, 4096), (32, 2048), (64, 1024), (128, 512), (256, 256),
-                     (512, 128), (1024, 64), (2048, 32)])
-folderName = "./2to16/"
+pairList = np.array([(8, 8192), (16, 4096), (32, 2048), (64, 1024)])
+folderName = "./test/"
 emulatorGraphs = True
 posteriorGraphs = True
 
@@ -125,7 +124,7 @@ def do_something(bb):
 
                 # Plot design points
                 plt.errorbar(desPts[:, pl], np.array(observables[:, nn]),
-                             yerr=np.array(truthUncert)[:, nn], fmt='D', color='orange', capsize=4)
+                             yerr=np.array(truthUncert)[nn], fmt='D', color='orange', capsize=4)
 
                 # Plot interpolator
                 plt.plot(ranges[pl + 1], z_list, color='blue')
@@ -135,7 +134,7 @@ def do_something(bb):
                 plt.plot(paramTruths[pl], obsTruths[nn], "D", color='black')
                 plt.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
                 plt.tight_layout()
-    plt.show()
+                plt.show()
     print(str(pairList[bb]) + " emulators trained")
 
     ### Compute the Posterior ###

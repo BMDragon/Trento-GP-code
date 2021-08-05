@@ -3,16 +3,15 @@ import subprocess
 import multiprocessing as mp
 
 # Make Changes Here #
-folderName = "./2to16/"
+folderName = "./test/"
 getData = True
-pairList = np.array([(8, 8192), (16, 4096), (32, 2048), (64, 1024), (128, 512), (256, 256),
-                     (512, 128), (1024, 64), (2048, 32)])
+pairList = np.array([(8, 8192), (16, 4096), (32, 2048), (64, 1024)])
 paramLabels = np.array(["Reduced thickness", "Nucleon-Width"])
 paramMins = np.array([0, 0.5])  # [param1_min, param2_min, ..., paramN_min]
 paramMaxs = np.array([0.5, 1.2])  # [param1_max, param2_max, ..., paramN_max]
 obsLabels = np.array([r"$\epsilon$2", r"$\epsilon$3"])
 paramTruths = np.array([0.314, 0.618])
-dataUncert = 65536
+dataUncert = 10000
 
 
 # Trento options

@@ -1,2 +1,2 @@
-python3.8 saveAuAu.py
-python3.8 newStats.py
+python3.8 listSaver.py
+python3.8 clean4b.py
