@@ -16,13 +16,16 @@ warnings.filterwarnings('ignore')
 
 
 # Make Changes Here #
-pairList = np.array([(8, 8192), (16, 4096), (32, 2048), (64, 1024)])
-folderName = "./test/"
-emulatorGraphs = True
-posteriorGraphs = True
+pairList = np.array([(8, 8192), (16, 4096), (32, 2048), (64, 1024), (128, 512), (256, 256),
+                     (512, 128), (1024, 64), (2048, 32)])
+folderName = "./2to16/"
+emulatorGraphs = False
+posteriorGraphs = False
 
-# DO NOT MAKE CHANGES BELOW #
-##################################################
+# Feel free to change the integration method on line 190)
+
+# DO NOT MAKE CHANGES BELOW (except line 190 and print statements) #
+####################################################################
 
 
 def do_something(bb):
@@ -47,7 +50,6 @@ def do_something(bb):
 
     ### Make emulator for each observable ###
     emul_d = {}
-
     for nn in range(len(obsTruths)):
         # Kernels
         k0 = 1. * kernels.RBF(
@@ -65,12 +67,9 @@ def do_something(bb):
         )
 
         kernel = (k0 + k2)
-
         nrestarts = 10
-
-        emulator_design_pts_value = np.array(desPts)  # .tolist()
-
-        emulator_obs_mean_value = np.array(observables[:, nn])  # .tolist()
+        emulator_design_pts_value = np.array(desPts)
+        emulator_obs_mean_value = np.array(observables[:, nn])
 
         # Fit a GP (optimize the kernel hyperparameters) to each PC.
         gaussian_process = GPR(
@@ -116,10 +115,10 @@ def do_something(bb):
                         val = (paramMins[rr] + paramMaxs[rr]) / 2
                         ranges = np.append(ranges, np.linspace(val, val, 50).reshape((1, 50)), axis=0)
                     else:
-                        ranges = np.append(ranges, np.linspace(paramMins[rr], paramMaxs[rr], 50).reshape((1, 50)), axis=0)
+                        ranges = np.append(ranges, np.linspace(paramMins[rr],
+                                                               paramMaxs[rr], 50).reshape((1, 50)), axis=0)
 
                 param_value_array = np.transpose(ranges[1:, :])
-
                 z_list, z_list_uncert = gaussian_process.predict(param_value_array, return_std=True)
 
                 # Plot design points
@@ -138,21 +137,24 @@ def do_something(bb):
     print(str(pairList[bb]) + " emulators trained")
 
     ### Compute the Posterior ###
-    # We assume uniform priors for this example
-    # Here 'x' is the only model parameter
+    # We assume uniform priors (integral across the whole parameter space should = 1)
 
     def prior():
-        return 1
+        dims = np.array([paramMaxs[vv] - paramMins[vv] for vv in range(len(paramMins))])
+        area = np.prod(dims)
+        return 1.0/area
 
     # Under the approximations that we're using, the posterior is
-    # exp(-1/2*\sum_{observables, pT}
-    # (model(observable,pT)-data(observable,pT))^2/(model_err(observable,pT)^2+exp_err(observable,pT)^2)
+    # Likelihood = exp((-1/2)ln((2 pi)^n\prod_n{modelErr(observable, pT)^2 + dataErr(observable, pT)^2})
+    #                 - (1/2)\sum_{observables, pT}(model(observable, pT) - data(observable, pT))^2
+    #                 / (modelErr(observable, pT)^2 + dataErr(observable, pT)^2))
 
     # Here 'x' is the only model parameter
 
     def likelihood(params):
         res = 0.0
-        norm = 1.
+        norm = (2*np.pi)**len(obsTruths)
+
         # Sum over observables
         for xx in range(len(obsTruths)):
             # Function that returns the value of an observable
@@ -165,15 +167,15 @@ def do_something(bb):
 
             cov = (tmp_model_uncert * tmp_model_uncert + tmp_data_uncert * tmp_data_uncert)
             res += np.power(tmp_model_mean - tmp_data_mean, 2) / cov
-            norm *= 1 / np.sqrt(cov.astype('float'))
+            norm *= cov
         res *= -0.5
-        e = 2.71828182845904523536
-        return norm * e ** res
+
+        return (norm ** -0.5) * (np.e ** res)
 
     def posterior(*params):
         return prior() * likelihood(np.array([*params]))
 
-    # Compute the posterior for a range of values of the parameter "x"
+    # Compute the posterior, evidence, and AIC #
     div = totDesPoints
     if totDesPoints < 50:
         div = 50
@@ -196,8 +198,8 @@ def do_something(bb):
         return -1*posterior(*params[0])
 
     maxPostPar = opt.fmin(minPost, paramTruths)
-    maxPost = float(posterior(*maxPostPar)) / vol1
-    AIC = -2 * np.log(maxPost) + 2*len(paramMins)
+    maxLike = float(likelihood(maxPostPar))
+    AIC = -2 * np.log(maxLike) + 2*len(paramMins)
 
     subtitle = "NormP: " + str(normish) + ", AIC: " + str(AIC)
 
@@ -231,5 +233,6 @@ def do_something(bb):
         plt.show()
 
 
+# Use multiprocessing to make the script run faster
 pool = mp.Pool()
 pool.map(do_something, range(len(pairList)))

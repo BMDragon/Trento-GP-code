@@ -3,15 +3,16 @@ import subprocess
 import multiprocessing as mp
 
 # Make Changes Here #
-folderName = "./test/"
+folderName = "./2to16/"
 getData = True
-pairList = np.array([(8, 8192), (16, 4096), (32, 2048), (64, 1024)])
+pairList = np.array([(8, 8192), (16, 4096), (32, 2048), (64, 1024), (128, 512), (256, 256),
+                     (512, 128), (1024, 64), (2048, 32)])
 paramLabels = np.array(["Reduced thickness", "Nucleon-Width"])
 paramMins = np.array([0, 0.5])  # [param1_min, param2_min, ..., paramN_min]
 paramMaxs = np.array([0.5, 1.2])  # [param1_max, param2_max, ..., paramN_max]
 obsLabels = np.array([r"$\epsilon$2", r"$\epsilon$3"])
 paramTruths = np.array([0.314, 0.618])
-dataUncert = 10000
+dataUncert = 65536
 
 
 # Trento options
@@ -33,6 +34,7 @@ def trentoRun(params, nTrent, uncert=False):
 ################################################################
 
 
+# Function that spaces out the design points quasi-randomly in a latin hypercube
 def get_quasirandom_sequence(dim, num_samples):
     def phi(dd):
         x = 2.0000
@@ -41,7 +43,7 @@ def get_quasirandom_sequence(dim, num_samples):
             return x
 
     d = dim  # Number of dimensions
-    n = num_samples  # Array of number of design points for each parameter
+    n = num_samples  # Number of design points
 
     g = phi(d)
     alpha = np.zeros(d)
@@ -60,6 +62,7 @@ def get_quasirandom_sequence(dim, num_samples):
     return z
 
 
+# Get the observable truth and data uncertainty
 obsTruths = trentoRun(paramTruths, dataUncert, uncert=True)
 print(paramTruths[0], paramTruths[1], obsTruths[0], obsTruths[1])
 
@@ -85,6 +88,8 @@ def saving(aa):
         design_points = np.zeros(np.shape(unit_random_sequence))
         observables = np.zeros((len(design_points), len(obsTruths[0])))
 
+        # For each design point, get an observable and store both the design point's
+        # coordinates in the parameter space and the observables' values
         for ii in range(len(design_points)):
             for jj in range(len(paramLabels)):
                 design_points[ii][jj] = paramMins[jj] + unit_random_sequence[ii][jj] * (paramMaxs[jj] - paramMins[jj])
@@ -97,5 +102,6 @@ def saving(aa):
     #   plt.show()
 
 
+# Use multiprocessing to make script run faster
 pool = mp.Pool()
 pool.map(saving, range(len(pairList)))
