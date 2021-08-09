@@ -139,17 +139,17 @@ def do_something(bb):
     ### Compute the Posterior ###
     # We assume uniform priors (integral across the whole parameter space should = 1)
 
+    dims = np.array([paramMaxs[vv] - paramMins[vv] for vv in range(len(paramMins))])
+    area = np.prod(dims)
+    height = 1.0/area
+
     def prior():
-        dims = np.array([paramMaxs[vv] - paramMins[vv] for vv in range(len(paramMins))])
-        area = np.prod(dims)
-        return 1.0/area
+        return height
 
     # Under the approximations that we're using, the posterior is
     # Likelihood = exp((-1/2)ln((2 pi)^n\prod_n{modelErr(observable, pT)^2 + dataErr(observable, pT)^2})
     #                 - (1/2)\sum_{observables, pT}(model(observable, pT) - data(observable, pT))^2
     #                 / (modelErr(observable, pT)^2 + dataErr(observable, pT)^2))
-
-    # Here 'x' is the only model parameter
 
     def likelihood(params):
         res = 0.0
