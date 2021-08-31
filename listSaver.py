@@ -3,7 +3,7 @@ import subprocess
 import multiprocessing as mp
 
 # Make Changes Here #
-folderName = "./2to16/"
+folderName = "./test/"
 getData = True
 pairList = np.array([(8, 8192), (16, 4096), (32, 2048), (64, 1024), (128, 512), (256, 256),
                      (512, 128), (1024, 64), (2048, 32)])
@@ -98,8 +98,6 @@ def saving(aa):
         np.save(dpFileName, design_points)
         np.save(obsFileName, observables)
         print("Saved design points and observables, dp: " + str(totDesPts) + ", tr: " + str(nTrentoRuns))
-    #   plt.plot(design_points[:, 0], design_points[:, 1], 'b.')
-    #   plt.show()
 
 
 # Use multiprocessing to make script run faster

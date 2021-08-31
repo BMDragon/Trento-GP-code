@@ -18,9 +18,9 @@ warnings.filterwarnings('ignore')
 # Make Changes Here #
 pairList = np.array([(8, 8192), (16, 4096), (32, 2048), (64, 1024), (128, 512), (256, 256),
                      (512, 128), (1024, 64), (2048, 32)])
-folderName = "./3d/"
-emulatorGraphs = False
-posteriorGraphs = False
+folderName = "./2to16/"
+emulatorGraphs = True
+posteriorGraphs = True
 
 # Feel free to change the integration method on line 190)
 
@@ -108,29 +108,14 @@ def do_something(bb):
                 plt.xlabel(paramNames[pl])
                 plt.ylabel(obs_label)
 
-                # Compute the posterior for a range of values of the parameter "x"
-                ranges = np.zeros(50).reshape((1, 50))
-                for rr in range(0, len(paramMins)):
-                    if rr != pl:
-                        val = (paramMins[rr] + paramMaxs[rr]) / 2
-                        ranges = np.append(ranges, np.linspace(val, val, 50).reshape((1, 50)), axis=0)
-                    else:
-                        ranges = np.append(ranges, np.linspace(paramMins[rr],
-                                                               paramMaxs[rr], 50).reshape((1, 50)), axis=0)
-
-                param_value_array = np.transpose(ranges[1:, :])
-                z_list, z_list_uncert = gaussian_process.predict(param_value_array, return_std=True)
-
                 # Plot design points
                 plt.errorbar(desPts[:, pl], np.array(observables[:, nn]),
                              yerr=np.array(truthUncert)[nn], fmt='D', color='orange', capsize=4)
 
                 # Plot interpolator
-                plt.plot(ranges[pl + 1], z_list, color='blue')
-                plt.fill_between(ranges[pl + 1], z_list - z_list_uncert, z_list + z_list_uncert, color='blue', alpha=.4)
+                z_list, z_list_uncert = gaussian_process.predict(desPts, return_std=True)
+                plt.scatter(desPts[:, pl], z_list, color='blue')
 
-                # Plot the truth
-                plt.plot(paramTruths[pl], obsTruths[nn], "D", color='black')
                 plt.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
                 plt.tight_layout()
                 plt.show()
