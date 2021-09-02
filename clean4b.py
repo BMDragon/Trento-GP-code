@@ -105,6 +105,7 @@ def do_something(bb):
                 plt.figure(1)
                 plt.xscale('linear')
                 plt.yscale('linear')
+                plt.title("Number of design points: " + str(totDesPoints) + ", Ensemble size: " + str(nTrento))
                 plt.xlabel(paramNames[pl])
                 plt.ylabel(obs_label)
 
@@ -201,7 +202,7 @@ def do_something(bb):
             plt.yscale('linear')
             plt.xlabel(paramNames[i])
             plt.ylabel(r'Posterior')
-            plt.title("Number of design points: " + str(totDesPoints) + ", Number of trento runs: " + str(nTrento))
+            plt.title("Number of design points: " + str(totDesPoints) + ", Ensemble size: " + str(nTrento))
             plt.figtext(.5, 0.01, subtitle, ha='center')
 
             # The marginal posterior for a parameter is obtained by integrating over a subset of other model parameters
