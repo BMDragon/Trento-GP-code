@@ -99,29 +99,35 @@ def do_something(bb):
         if emulatorGraphs:
             # Label for the observable
             obs_label = obsNames[nn]
-
             # observable vs value of one parameter (with the other parameter fixed)
-            for pl in range(len(paramTruths)):
+            # for pl in range(len(paramTruths)):
+            if True:
                 plt.figure(1)
                 plt.xscale('linear')
                 plt.yscale('linear')
-                plt.title("Number of design points: " + str(totDesPoints) + ", Ensemble size: " + str(nTrento))
-                plt.xlabel(paramNames[pl])
-                plt.ylabel(obs_label)
+                # plt.title("Number of design points: " + str(totDesPoints) + ", Ensemble size: " + str(nTrento))
+                plt.xlabel(obs_label + " truth")
+                plt.ylabel(obs_label + " emulator")
 
-                # Plot design points
+                """# Plot design points
                 plt.errorbar(desPts[:, pl], np.array(observables[:, nn]),
-                             yerr=np.array(truthUncert)[nn], fmt='D', color='orange', capsize=4)
+                             yerr=np.array(truthUncert)[nn], fmt='D', color='orange', capsize=4)"""
 
                 # Plot interpolator
                 z_list, z_list_uncert = gaussian_process.predict(desPts, return_std=True)
-                plt.scatter(desPts[:, pl], z_list, color='blue')
+                xx = np.array(observables[:, nn])
+                plt.scatter(xx, z_list, color='blue', marker='.')
+                line = np.linspace(min(min(z_list), min(xx)), max(max(z_list), max(xx)), 2)
+                plt.plot(line, line, 'r-', alpha=0.5)
 
                 plt.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
                 plt.tight_layout()
-                plt.show()
+                savepath = "/mnt/c/Users/bmwei/Pictures/QCD Images/CT graphs/" + \
+                           str(pairList[bb][0]) + str(obs_label) + " closure.png"
+                plt.savefig(savepath, dpi=300)
+                plt.close(1)
     print(str(pairList[bb]) + " emulators trained")
-
+    breakpoint()
     ### Compute the Posterior ###
     # We assume uniform priors (integral across the whole parameter space should = 1)
 
