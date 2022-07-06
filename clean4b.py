@@ -103,6 +103,7 @@ def do_something(bb):
             # for pl in range(len(paramTruths)):
             if True:
                 plt.figure(1)
+                plt.rc('font', size=16)
                 plt.xscale('linear')
                 plt.yscale('linear')
                 # plt.title("Number of design points: " + str(totDesPoints) + ", Ensemble size: " + str(nTrento))
