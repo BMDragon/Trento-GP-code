@@ -37,7 +37,7 @@ def do_something(fc):
     fig.set_size_inches(5.5, 3.3+1.32*len(paramMins))
     
     
-    plt.xlabel("Number of Design Points")
+    plt.xlabel(r"No. Design Points / No. T$_\mathrm{R}$ENTo events")
     for i in range(len(paramMins)):
         axs[i].errorbar(pairList[:, 0], stats[:, mm, i], fmt='D', ms=4,
                         yerr=[np.sqrt(np.array(stats[:, 2, i])), np.sqrt(np.array(stats[:, 2, i]))])
@@ -48,10 +48,11 @@ def do_something(fc):
 
     hold = len(paramMins)
     axs[hold].plot(pairList[:, 0], stats[:, 3, 1], label='Posterior')
-    axs[hold].set(ylabel='Posterior at\nthe truth')
+    axs[hold].set(ylabel='Posterior at\nthe truth [arb.u.]')
     axs[hold].set_xscale('log', base=2)
     axs[hold].set_ylim(0, max(stats[:, 3, 1])*1.5)
     axs[hold].legend(loc=2, fontsize=13)
+    axs[hold].set_xticklabels([r'$2^{-11}$', r'$2^{-8}$', r'$2^{-5}$'])
 
     dub = axs[hold].twinx()
     dub.plot(pairList[:, 0], stats[:, 3, 0], 'r', label='AIC')
